@@ -75,13 +75,29 @@ h3{margin:0 0 18px;font-size:13px;letter-spacing:.18em;text-transform:uppercase;
 .gate input{font:inherit;font-size:28px;letter-spacing:.4em;text-align:center;width:200px;padding:12px;border-radius:14px;border:1.5px solid var(--line);margin:16px 0}
 .gate button{font:inherit;font-weight:600;border:0;border-radius:14px;padding:13px 26px;background:linear-gradient(120deg,#1D5FB8,#4FA3E0);color:#fff;cursor:pointer}
 .empty{color:var(--muted);text-align:center;padding:50px}
+.pl{display:grid;grid-template-columns:460px 1fr;gap:28px;align-items:stretch}
+.donut{position:relative;display:grid;place-items:center}
+.donut svg{width:400px;height:400px;transform:rotate(-90deg)}
+.donut circle{fill:none;stroke-width:26;transition:stroke-dasharray 1s cubic-bezier(.2,.8,.2,1),stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1)}
+.dc{position:absolute;text-align:center}
+.dc b{display:block;font-size:72px;line-height:1;color:var(--red)}
+.dc span{display:block;font-size:14px;color:var(--muted);max-width:190px;margin:6px auto 0}
+.q2{font-size:13px;letter-spacing:.18em;text-transform:uppercase;color:var(--royal);font-weight:700;margin:0 0 8px}
+.qt{font-size:26px;font-weight:700;margin:0 0 22px;line-height:1.2}
+.lg{display:flex;flex-direction:column;gap:12px}
+.lg div{display:flex;align-items:center;gap:14px;background:var(--mist);border-radius:16px;padding:14px 18px;font-size:17px;font-weight:600}
+.lg i{width:16px;height:16px;border-radius:50%;flex:none}
+.lg em{margin-left:auto;font-style:normal;font-size:22px}
+.lg small{color:var(--muted);font-weight:500;font-size:13px;margin-left:8px}
+.alert{margin-top:22px;border-radius:18px;padding:20px 24px;background:linear-gradient(120deg,#D7263D,#F0596A);color:#fff;font-size:20px;font-weight:600;line-height:1.35}
+.alert b{font-size:34px}
 .hide{display:none}
 </style>
 </head>
 <body>
 <header>
   <div><div class="k">Unidad 54 · Planificación estratégica</div><h1 id="ttl">Resultados en vivo</h1></div>
-  <div class="tabs hide" id="tabs"><button class="on" data-v="vivo">Encuesta en vivo</button><button data-v="top">Top 3 trabajos</button></div>
+  <div class="tabs hide" id="tabs"><button class="on" data-v="plan">¿Tienen plan?</button><button data-v="vivo">Encuesta en vivo</button><button data-v="top">Top 3 trabajos</button></div>
   <div class="live hide" id="live"><i></i>En vivo</div>
 </header>
 
@@ -92,6 +108,18 @@ h3{margin:0 0 18px;font-size:13px;letter-spacing:.18em;text-transform:uppercase;
   <button id="go">Entrar</button>
   <div id="gerr" style="color:var(--red);margin-top:10px;font-size:13px"></div>
 </div>
+
+<main id="plan" class="hide">
+  <div class="pl">
+    <div class="card donut"><svg viewBox="0 0 200 200" id="dn"></svg><div class="dc"><b id="pct">0%</b><span>no tiene un plan estratégico</span></div></div>
+    <div class="card">
+      <p class="q2">Pregunta 2 de la encuesta · <span id="np">0</span> respuestas</p>
+      <p class="qt">¿Tu organización tiene un plan estratégico?</p>
+      <div class="lg" id="lg"></div>
+      <div class="alert" id="al"></div>
+    </div>
+  </div>
+</main>
 
 <main id="vivo" class="hide">
   <div class="grid">
@@ -137,6 +165,17 @@ function render(){
   const tot=enc.length||1;
   document.getElementById("bars").innerHTML=PLANES.map(([p,c])=>{const k=enc.filter(d=>d.tiene_plan===p).length;const pc=Math.round(k*100/tot);
     return `<div class="bar"><div class="t">${p}<b>${k} · ${enc.length?pc:0}%</b></div><div class="track"><div class="fill" style="width:${enc.length?pc:0}%;background:${c}"></div></div></div>`}).join("");
+  // vista plan
+  const cnt=PLANES.map(([p,c])=>[p,c,enc.filter(d=>d.tiene_plan===p).length]);
+  const sin=cnt[2][2]+cnt[3][2], noUsa=cnt[1][2];
+  const pSin=enc.length?Math.round(sin*100/enc.length):0, pNo=enc.length?Math.round((sin+noUsa)*100/enc.length):0;
+  document.getElementById("pct").textContent=pSin+"%";document.getElementById("np").textContent=enc.length;
+  const C=2*Math.PI*80;let off=0;
+  document.getElementById("dn").innerHTML='<circle cx="100" cy="100" r="80" stroke="#F2F6FB" style="stroke-width:26"></circle>'+
+    cnt.map(([p,c,k])=>{const L=enc.length?C*k/enc.length:0;const s=`<circle cx="100" cy="100" r="80" stroke="${c}" stroke-dasharray="${L} ${C-L}" stroke-dashoffset="${-off}"></circle>`;off+=L;return s}).join("");
+  const lab={"Plan escrito y aprobado":"Tiene plan escrito y aprobado","Tiene plan, pero no se usa":"Tiene plan, pero no se usa","Solo planifica año a año":"Solo planifica año a año","Funciona sobre la marcha":"Funciona sobre la marcha"};
+  document.getElementById("lg").innerHTML=cnt.map(([p,c,k])=>`<div><i style="background:${c}"></i>${lab[p]}<em>${enc.length?Math.round(k*100/enc.length):0}%<small>${k}</small></em></div>`).join("");
+  document.getElementById("al").innerHTML=enc.length?`<b>${pSin}%</b> de las organizaciones no tiene un plan estratégico. Si sumamos las que lo tienen pero no lo usan, <b>${pNo}%</b> funciona sin una estrategia que la guíe.`:"Esperando respuestas…";
   const tipos={};enc.forEach(d=>tipos[d.tipo_org]=(tipos[d.tipo_org]||0)+1);
   document.getElementById("tipos").innerHTML=Object.entries(tipos).sort((a,b)=>b[1]-a[1]).map(([t,k])=>`<span class="chip">${esc(t)}<b>${k}</b></span>`).join("")||'<span class="hint">Esperando respuestas…</span>';
   document.getElementById("feed").innerHTML=enc.slice(-5).reverse().map(d=>`<div><span class="av">${esc(d.nombre[0].toUpperCase())}</span><span><b>${esc(d.nombre)}</b><small>${esc(d.organizacion)}</small></span></div>`).join("")||'<span class="hint">Esperando respuestas…</span>';
@@ -160,15 +199,15 @@ function cerrar(){document.getElementById("ov").classList.remove("on")}
 document.getElementById("ov").addEventListener("click",e=>{if(e.target.id==="ov")cerrar()});
 document.addEventListener("keydown",e=>{if(e.key==="Escape")cerrar()});
 function setView(v){view=v;document.querySelectorAll("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===v));
-  document.getElementById("vivo").classList.toggle("hide",v!=="vivo");document.getElementById("top").classList.toggle("hide",v!=="top");
-  document.getElementById("ttl").textContent=v==="vivo"?"Resultados en vivo":"Los 3 trabajos más completos";
+  ["plan","vivo","top"].forEach(k=>document.getElementById(k).classList.toggle("hide",v!==k));
+  document.getElementById("ttl").textContent={plan:"¿Cuántas organizaciones planifican?",vivo:"Resultados en vivo",top:"Los 3 trabajos más completos"}[v];
   try{history.replaceState(null,"","#"+v)}catch(e){}}
 document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.v)));
 async function start(){
   try{await load()}catch(e){document.getElementById("gerr").textContent="PIN incorrecto.";return}
   try{sessionStorage.setItem("u54pin",PIN)}catch(e){}
   document.getElementById("gate").classList.add("hide");["tabs","live"].forEach(i=>document.getElementById(i).classList.remove("hide"));
-  setView(location.hash==="#top"?"top":"vivo");
+  setView(["#top","#vivo","#plan"].includes(location.hash)?location.hash.slice(1):"plan");
   clearInterval(timer);timer=setInterval(()=>load().catch(()=>{}),5000);
 }
 document.getElementById("go").addEventListener("click",()=>{PIN=document.getElementById("pin").value.trim();start()});
