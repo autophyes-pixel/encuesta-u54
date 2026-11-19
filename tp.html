@@ -67,6 +67,9 @@ button{font:inherit;font-weight:600;border:0;border-radius:14px;padding:14px 18p
 .smart span{text-align:center;border-radius:10px;padding:7px 2px;font-size:10.5px;font-weight:600;background:var(--mist);color:#8A96A8;transition:.3s}
 .smart span b{display:block;font-size:16px}
 .smart span.on{background:#E8F6EF;color:#1F9D6B}
+.smhint{font-size:12.5px;color:#6B7A90;line-height:1.45;margin-top:8px}
+.smhint b{color:var(--ink)}
+.smhint.ok{color:#1F9D6B}.smhint.ok b{color:#1F9D6B}
 </style>
 </head>
 <body>
@@ -110,8 +113,9 @@ button{font:inherit;font-weight:600;border:0;border-radius:14px;padding:14px 18p
       <div class="f4"><span>Amenaza</span><textarea name="amenaza" maxlength="200" placeholder="Externa, a reducir"></textarea></div>
     </div>
     <label>3 · Un objetivo SMART para los próximos 2 años</label>
-    <textarea name="objetivo" maxlength="300" placeholder="Ej.: Aumentar un 20 % los socios activos antes de diciembre de 2027"></textarea>
-    <div class="smart" id="smart"><span id="sm-s"><b>S</b>Específico</span><span id="sm-m"><b>M</b>Medible</span><span><b>A</b>Alcanzable</span><span><b>R</b>Priorizado</span><span id="sm-t"><b>T</b>Con plazo</span></div>
+    <textarea name="objetivo" maxlength="300" placeholder="Ej.: Aumentar un 20 % los socios activos antes de diciembre de 2027, con una campaña en nuestras escuelitas"></textarea>
+    <div class="smart" id="smart"><span id="sm-S"><b>S</b>Específico</span><span id="sm-M"><b>M</b>Medible</span><span id="sm-A"><b>A</b>Alcanzable</span><span id="sm-R"><b>R</b>Priorizado</span><span id="sm-T"><b>T</b>Con plazo</span></div>
+    <div class="smhint" id="smhint">Las letras se encienden a medida que tu objetivo cumple cada criterio. Es una guía: la evaluación final la hace el facilitador.</div>
     <label>4 · Indicador: ¿cómo vas a saber que lo lograste?</label>
     <input type="text" name="indicador" maxlength="200" placeholder="Ej.: Cantidad de socios al día en el padrón">
     <label class="check"><input type="checkbox" name="acepta_proyectar" checked> Acepto que mi trabajo se proyecte en la clase con mi nombre.</label>
@@ -152,11 +156,23 @@ function check(i){
   if(i===1){if($("vision").length<3)return"Escribí la visión.";if($("objetivo").length<3)return"Escribí un objetivo.";}
   return"";
 }
+const SMART={
+ S:{t:"Específico",re:/\b(aument|reduc|logr|increment|alcanz|mejor|cre[aá]r|creaci|implement|form[aeo]|capacit|consegu|organiz|duplic|tripl|ampli|dismin|desarroll|obten|capt|sum[aeo]|lleg|incorpor|abri|construi|certific|gan[aeo]|elev|consolid|fortalec|realiz|disput|particip|lanz|instal|equip|habilit|recuper|bajar|subir|pasar)/i,min:8,falta:"decí qué vas a lograr con un verbo de acción (aumentar, reducir, crear…)"},
+ M:{t:"Medible",re:/(\d|%|\b(dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|quince|veinte|treinta|cuarenta|cincuenta|cien|mil|doble|triple|mitad|cantidad|n[uú]mero de|porcentaje)\b)/i,falta:"poné una cifra (cantidad, % o meta)"},
+ A:{t:"Alcanzable",re:/(ya tenemos|ya cont|actual|existente|disponible|con (el|la|los|las|nuestr|nuevo|apoyo)|mediante|a trav[eé]s de|gracias a|partiendo|desde (el|la|los|las|nuestr|\d)|\bde \d+ a \d+|presupuesto|recurso|apoyo|alianza|convenio|voluntari|entrenador|instalaci|cancha|gimnasio)/i,falta:"contá con qué recursos o desde qué base partís"},
+ R:{t:"Priorizado",re:/(priori|enfoc|principal|clave|estrat[eé]gic|misi[oó]n|visi[oó]n|para (que|lograr|mejorar|fortalecer|garantizar|asegurar|consolidar|crecer|atraer|retener|formar)|con el fin|a fin de|categor[ií]a|juvenil|infantil|socio|deportista|atleta|jugador|federad|alto rendimiento|semillero|cantera)/i,falta:"explicá por qué es importante o a quién beneficia"},
+ T:{t:"Con plazo",re:/(20\d\d|\ba[nñ]o|\ba[nñ]os|\bmes|semestre|trimestre|temporada|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre|plazo|antes de|hasta (el|la|fin)|a fin|al cierre|pr[oó]xim|anual|por a[nñ]o|cada a[nñ]o)/i,falta:"agregá una fecha o plazo"}
+};
+function smartEval(o){o=o||"";const w=o.trim().split(/\s+/).filter(Boolean).length;const r={};
+ for(const k in SMART){const c=SMART[k];r[k]=c.re.test(o)&&(!c.min||w>=c.min);}return r;}
+
 const obj=f.elements.objetivo;
-obj.addEventListener("input",()=>{const o=obj.value;
-  document.getElementById("sm-s").classList.toggle("on",o.trim().split(/\s+/).length>=6);
-  document.getElementById("sm-m").classList.toggle("on",/\d/.test(o));
-  document.getElementById("sm-t").classList.toggle("on",/(20\d\d|año|años|mes|meses|semestre|trimestre|diciembre|junio|plazo|antes de|para el|a fin)/i.test(o));});
+obj.addEventListener("input",()=>{const r=smartEval(obj.value);let falta=[];
+  for(const k in SMART){document.getElementById("sm-"+k).classList.toggle("on",r[k]);if(!r[k])falta.push(`<b>${k}</b> ${SMART[k].falta}`)}
+  const h=document.getElementById("smhint");
+  h.innerHTML=!obj.value.trim()?"Las letras se encienden a medida que tu objetivo cumple cada criterio. Es una guía: la evaluación final la hace el facilitador.":
+    falta.length?"Para completarlo: "+falta.join(" · "):"<b>¡Excelente!</b> Tu objetivo cumple los cinco criterios SMART.";
+  h.classList.toggle("ok",!falta.length&&!!obj.value.trim());});
 document.querySelectorAll("[data-next]").forEach(b=>b.addEventListener("click",()=>{const e=check(step);cards[step].querySelector(".err").textContent=e;if(!e)show(step+1)}));
 document.querySelectorAll("[data-prev]").forEach(b=>b.addEventListener("click",()=>show(step-1)));
 f.addEventListener("submit",async ev=>{

@@ -157,7 +157,7 @@ html.embed .ctl{display:none}
 </main>
 
 <main id="top" class="hide">
-  <p class="hint"><b id="nt">0</b> trabajos entregados · Ranking automático según el nivel de detalle: visión, FODA completo, objetivo medible y con plazo, e indicador. Tocá una tarjeta para verla completa.</p>
+  <p class="hint"><b id="nt">0</b> trabajos entregados · Ranking automático según el nivel de detalle: visión, FODA completo, objetivo SMART (5 criterios) e indicador. Tocá una tarjeta para verla completa.</p>
   <div class="podium" id="podium"></div>
 </main>
 
@@ -172,12 +172,21 @@ let PIN=QS.get("pin")||"";if(!PIN){try{PIN=sessionStorage.getItem("u54pin")||""}
 if(EMBED)document.documentElement.classList.add("embed");
 let data=[];let view="vivo";let timer=null;
 const esc=s=>(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
-const medible=o=>/\d/.test(o||"");
+const SMART={
+ S:{t:"Específico",re:/\b(aument|reduc|logr|increment|alcanz|mejor|cre[aá]r|creaci|implement|form[aeo]|capacit|consegu|organiz|duplic|tripl|ampli|dismin|desarroll|obten|capt|sum[aeo]|lleg|incorpor|abri|construi|certific|gan[aeo]|elev|consolid|fortalec|realiz|disput|particip|lanz|instal|equip|habilit|recuper|bajar|subir|pasar)/i,min:8,falta:"decí qué vas a lograr con un verbo de acción (aumentar, reducir, crear…)"},
+ M:{t:"Medible",re:/(\d|%|\b(dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|quince|veinte|treinta|cuarenta|cincuenta|cien|mil|doble|triple|mitad|cantidad|n[uú]mero de|porcentaje)\b)/i,falta:"poné una cifra (cantidad, % o meta)"},
+ A:{t:"Alcanzable",re:/(ya tenemos|ya cont|actual|existente|disponible|con (el|la|los|las|nuestr|nuevo|apoyo)|mediante|a trav[eé]s de|gracias a|partiendo|desde (el|la|los|las|nuestr|\d)|\bde \d+ a \d+|presupuesto|recurso|apoyo|alianza|convenio|voluntari|entrenador|instalaci|cancha|gimnasio)/i,falta:"contá con qué recursos o desde qué base partís"},
+ R:{t:"Priorizado",re:/(priori|enfoc|principal|clave|estrat[eé]gic|misi[oó]n|visi[oó]n|para (que|lograr|mejorar|fortalecer|garantizar|asegurar|consolidar|crecer|atraer|retener|formar)|con el fin|a fin de|categor[ií]a|juvenil|infantil|socio|deportista|atleta|jugador|federad|alto rendimiento|semillero|cantera)/i,falta:"explicá por qué es importante o a quién beneficia"},
+ T:{t:"Con plazo",re:/(20\d\d|\ba[nñ]o|\ba[nñ]os|\bmes|semestre|trimestre|temporada|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre|plazo|antes de|hasta (el|la|fin)|a fin|al cierre|pr[oó]xim|anual|por a[nñ]o|cada a[nñ]o)/i,falta:"agregá una fecha o plazo"}
+};
+function smartEval(o){o=o||"";const w=o.trim().split(/\s+/).filter(Boolean).length;const r={};
+ for(const k in SMART){const c=SMART[k];r[k]=c.re.test(o)&&(!c.min||w>=c.min);}return r;}
+
 const plazo=o=>/(20\d\d|año|años|mes|meses|semestre|trimestre|enero|febrero|marzo|abril|mayo|junio|julio|agosto|septiembre|setiembre|octubre|noviembre|diciembre|plazo|antes de|para el|a fin)/i.test(o||"");
 const foda=r=>["fortaleza","oportunidad","debilidad","amenaza"].filter(k=>(r[k]||"").trim()).length;
 function score(r){
   let s=2;s+=foda(r)*1;if(foda(r)===4)s+=1;if(r.indicador)s+=1.5;if(r.rol)s+=.5;
-  if(medible(r.objetivo))s+=2;if(plazo(r.objetivo))s+=2;
+  const sm=smartEval(r.objetivo);s+=Object.values(sm).filter(Boolean).length*1.2;if(Object.values(sm).every(Boolean))s+=1;
   const len=[r.vision,r.objetivo,r.fortaleza,r.oportunidad,r.debilidad,r.amenaza,r.indicador].map(x=>(x||"").length).reduce((a,b)=>a+b,0);
   s+=Math.min(4,len/70);return Math.round(s*10)/10;
 }
@@ -212,7 +221,7 @@ function render(){
     <h4>${esc(d.nombre)}</h4><div class="org">${esc(d.organizacion)} · ${esc(d.tipo_org)}</div>
     <div class="q">«${esc(d.vision)}»</div>${tags(d)}</div>`).join(""):'<div class="empty card" style="grid-column:1/-1">Todavía no hay trabajos entregados. Se actualiza solo cada 5 segundos.</div>';
 }
-function tags(d){const t=[["FODA "+foda(d)+"/4",foda(d)===4],["Medible",medible(d.objetivo)],["Con plazo",plazo(d.objetivo)],["Indicador",!!d.indicador]];
+function tags(d){const t=[["FODA "+foda(d)+"/4",foda(d)===4],["SMART "+Object.values(smartEval(d.objetivo)).filter(Boolean).length+"/5",Object.values(smartEval(d.objetivo)).every(Boolean)],["Indicador",!!d.indicador]];
   return `<div class="tags">${t.map(([l,o])=>`<span class="tag ${o?"ok":"no"}">${o?"✓ ":""}${l}</span>`).join("")}</div>`}
 function det(i){const d=window._top[i];const F=[["Fortaleza","fortaleza","#E8F6EF","#1F9D6B"],["Oportunidad","oportunidad","#EEF4FC","#1D5FB8"],["Debilidad","debilidad","#FDF3E3","#B8741A"],["Amenaza","amenaza","#FDECEE","#D7263D"]];
   document.getElementById("det").innerHTML=`<button class="x" onclick="cerrar()">×</button>
