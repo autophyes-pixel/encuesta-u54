@@ -124,6 +124,11 @@ button{font:inherit;font-weight:600;border:0;border-radius:14px;padding:14px 18p
     <h2>¡Trabajo entregado!</h2>
     <p class="sub" style="margin:8px 0 0">Mirá la pantalla: en unos minutos presentamos los 3 trabajos más completos.</p>
   </section>
+  <section class="card done hide" id="closed">
+    <div class="ok" style="background:linear-gradient(135deg,#5E6B80,#9AA6B8)">⏱</div>
+    <h2>El plazo de entrega terminó</h2>
+    <p class="sub" style="margin:8px 0 0">Ya no se reciben más respuestas. Mirá la pantalla: estamos viendo los resultados.</p>
+  </section>
   <div class="foot">Unidad 54 · Planificación estratégica · Manual de Administración Deportiva, Solidaridad Olímpica</div>
 </div>
 <script>
@@ -162,10 +167,13 @@ f.addEventListener("submit",async ev=>{
     objetivo:$("objetivo"),indicador:$("indicador")||null,acepta_proyectar:f.elements.acepta_proyectar.checked};
   try{
     const r=await fetch(URL_API,{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json",Prefer:"return=minimal"},body:JSON.stringify(body)});
-    if(!r.ok)throw new Error(await r.text());
+    if(!r.ok){const t=await r.text();if(r.status===401||r.status===403||/row-level security/.test(t)){cerrado();return}throw new Error(t)}
     f.classList.add("hide");document.getElementById("steps").classList.add("hide");document.getElementById("done").classList.remove("hide");
   }catch(x){err.textContent="No se pudo enviar. Revisá tu conexión e intentá de nuevo.";btn.disabled=false;btn.textContent="Entregar trabajo"}
 });
+
+function cerrado(){f.classList.add("hide");document.getElementById("steps").classList.add("hide");document.getElementById("done").classList.add("hide");document.getElementById("closed").classList.remove("hide")}
+fetch("https://nctkynwamvyviixbdfau.supabase.co/rest/v1/rpc/curso_u54_estado_get",{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json"},body:"{}"}).then(r=>r.json()).then(e=>{if(e&&e["trabajo"]===false)cerrado()}).catch(()=>{});
 </script>
 </body>
 </html>

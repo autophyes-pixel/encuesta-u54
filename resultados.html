@@ -106,6 +106,14 @@ html.embed .lg div{font-size:1.75vw;padding:1.4vh 1.4vw}
 html.embed .lg em{font-size:2.2vw}
 html.embed .alert{font-size:1.75vw;padding:2vh 1.8vw;margin-top:2.4vh}
 html.embed .alert b{font-size:2.8vw}
+.ctl{display:flex;gap:8px;margin-left:14px}
+.tabs button,.ctl button,.live{white-space:nowrap}
+header h1{font-size:21px}
+.ctl button{font:inherit;font-size:12px;font-weight:600;border:0;border-radius:99px;padding:8px 14px;cursor:pointer;display:flex;align-items:center;gap:7px;transition:.2s}
+.ctl button i{width:9px;height:9px;border-radius:50%}
+.ctl .on{background:#E8F6EF;color:#1F9D6B}.ctl .on i{background:#1F9D6B}
+.ctl .off{background:#FDECEE;color:#D7263D}.ctl .off i{background:#D7263D}
+html.embed .ctl{display:none}
 .hide{display:none}
 </style>
 </head>
@@ -113,6 +121,7 @@ html.embed .alert b{font-size:2.8vw}
 <header>
   <div><div class="k">Unidad 54 · Planificación estratégica</div><h1 id="ttl">Resultados en vivo</h1></div>
   <div class="tabs hide" id="tabs"><button class="on" data-v="plan">¿Tienen plan?</button><button data-v="vivo">Encuesta en vivo</button><button data-v="top">Top 3 trabajos</button></div>
+  <div class="ctl hide" id="ctl"><button id="b-encuesta" data-e="encuesta"></button><button id="b-trabajo" data-e="trabajo"></button></div>
   <div class="live hide" id="live"><i></i>En vivo</div>
 </header>
 
@@ -220,10 +229,17 @@ function setView(v){view=v;document.querySelectorAll("#tabs button").forEach(b=>
   document.getElementById("ttl").textContent={plan:"¿Cuántas organizaciones planifican?",vivo:"Resultados en vivo",top:"Los 3 trabajos más completos"}[v];
   try{history.replaceState(null,"","#"+v)}catch(e){}}
 document.querySelectorAll("#tabs button").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.v)));
+
+const API="https://nctkynwamvyviixbdfau.supabase.co/rest/v1/rpc/";let EST={};
+const LBL={encuesta:["Encuesta abierta","Encuesta cerrada"],trabajo:["Trabajos abiertos","Trabajos cerrados"]};
+function pintaEst(){["encuesta","trabajo"].forEach(k=>{const b=document.getElementById("b-"+k);const ab=EST[k]!==false;b.className=ab?"on":"off";b.innerHTML="<i></i>"+LBL[k][ab?0:1];b.title=ab?"Tocá para cerrar":"Tocá para volver a abrir";})}
+async function cargaEst(){try{EST=await fetch(API+"curso_u54_estado_get",{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json"},body:"{}"}).then(r=>r.json());pintaEst()}catch(e){}}
+document.querySelectorAll("#ctl button").forEach(b=>b.addEventListener("click",async()=>{const k=b.dataset.e;const nuevo=EST[k]===false;
+  try{EST=await fetch(API+"curso_u54_estado_set",{method:"POST",headers:{apikey:KEY,"Content-Type":"application/json"},body:JSON.stringify({p_pin:PIN,p_etapa:k,p_abierto:nuevo})}).then(r=>r.json());pintaEst()}catch(e){}}));
 async function start(){
   try{await load()}catch(e){document.getElementById("gerr").textContent="PIN incorrecto.";return}
   try{sessionStorage.setItem("u54pin",PIN)}catch(e){}
-  document.getElementById("gate").classList.add("hide");["tabs","live"].forEach(i=>document.getElementById(i).classList.remove("hide"));
+  document.getElementById("gate").classList.add("hide");["tabs","live","ctl"].forEach(i=>document.getElementById(i).classList.remove("hide"));cargaEst();
   const want=QS.get("v")||location.hash.slice(1);setView(["top","vivo","plan"].includes(want)?want:"plan");
   clearInterval(timer);timer=setInterval(()=>load().catch(()=>{}),5000);
 }
