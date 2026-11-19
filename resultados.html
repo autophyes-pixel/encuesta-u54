@@ -91,6 +91,21 @@ h3{margin:0 0 18px;font-size:13px;letter-spacing:.18em;text-transform:uppercase;
 .lg small{color:var(--muted);font-weight:500;font-size:13px;margin-left:8px}
 .alert{margin-top:22px;border-radius:18px;padding:20px 24px;background:linear-gradient(120deg,#D7263D,#F0596A);color:#fff;font-size:20px;font-weight:600;line-height:1.35}
 .alert b{font-size:34px}
+html.embed body{background:#fff}
+html.embed header,html.embed #gate{display:none!important}
+html.embed main{padding:2vh 2vw;max-width:none}
+html.embed .pl{grid-template-columns:44vw 1fr;gap:2.5vw;height:96vh}
+html.embed .card{box-shadow:none;padding:2vh 1.5vw}
+html.embed .donut svg{width:40vw;height:40vw;max-height:86vh;max-width:86vh}
+html.embed .dc b{font-size:9vw}
+html.embed .dc span{font-size:1.9vw;max-width:22vw}
+html.embed .q2{font-size:1.3vw}
+html.embed .qt{font-size:2.6vw;margin-bottom:2.2vh}
+html.embed .lg{gap:1.4vh}
+html.embed .lg div{font-size:1.75vw;padding:1.4vh 1.4vw}
+html.embed .lg em{font-size:2.2vw}
+html.embed .alert{font-size:1.75vw;padding:2vh 1.8vw;margin-top:2.4vh}
+html.embed .alert b{font-size:2.8vw}
 .hide{display:none}
 </style>
 </head>
@@ -143,7 +158,9 @@ h3{margin:0 0 18px;font-size:13px;letter-spacing:.18em;text-transform:uppercase;
 const RPC="https://nctkynwamvyviixbdfau.supabase.co/rest/v1/rpc/curso_u54_resultados";
 const KEY="sb_publishable_PU2ttka2MCU_DbaDioj4Yg_N_jJOfN_";
 const PLANES=[["Plan escrito y aprobado","#1F9D6B"],["Tiene plan, pero no se usa","#C8A24A"],["Solo planifica año a año","#1D5FB8"],["Funciona sobre la marcha","#D7263D"]];
-let PIN="";try{PIN=sessionStorage.getItem("u54pin")||""}catch(e){}
+const QS=new URLSearchParams(location.search);const EMBED=QS.get("embed")==="1";
+let PIN=QS.get("pin")||"";if(!PIN){try{PIN=sessionStorage.getItem("u54pin")||""}catch(e){}}
+if(EMBED)document.documentElement.classList.add("embed");
 let data=[];let view="vivo";let timer=null;
 const esc=s=>(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 const medible=o=>/\d/.test(o||"");
@@ -207,7 +224,7 @@ async function start(){
   try{await load()}catch(e){document.getElementById("gerr").textContent="PIN incorrecto.";return}
   try{sessionStorage.setItem("u54pin",PIN)}catch(e){}
   document.getElementById("gate").classList.add("hide");["tabs","live"].forEach(i=>document.getElementById(i).classList.remove("hide"));
-  setView(["#top","#vivo","#plan"].includes(location.hash)?location.hash.slice(1):"plan");
+  const want=QS.get("v")||location.hash.slice(1);setView(["top","vivo","plan"].includes(want)?want:"plan");
   clearInterval(timer);timer=setInterval(()=>load().catch(()=>{}),5000);
 }
 document.getElementById("go").addEventListener("click",()=>{PIN=document.getElementById("pin").value.trim();start()});
